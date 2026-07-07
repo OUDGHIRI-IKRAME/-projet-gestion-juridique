@@ -25,6 +25,7 @@ export interface CourrierSimule {
   objet: string;
   type: VueActive;
   date: string;
+  dateRaw?: string;
   source: string;
   serviceActuel: string;
   serviceActuelKey?: string;

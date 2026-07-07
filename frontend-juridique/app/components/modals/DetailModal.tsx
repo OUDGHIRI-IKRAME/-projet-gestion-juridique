@@ -75,7 +75,7 @@ export function DetailModal({ doc, onClose, historique, cur, langue = "fr", toke
   };
 
   const progress = getWorkflowProgress(doc.serviceActuelKey || doc.serviceActuel);
-  const delayDays = getDelayDays(doc.date);
+  const delayDays = getDelayDays(doc.dateRaw || doc.date);
   const isLate = delayDays > 7;
 
   return (
@@ -137,7 +137,7 @@ export function DetailModal({ doc, onClose, historique, cur, langue = "fr", toke
             </div>
             <div>
               <p className="text-xs font-bold text-slate-500 dark:text-slate-400">{cur.serviceActuel}</p>
-              <p className="text-sm dark:text-slate-200">{doc.serviceActuel}</p>
+              <p className="text-sm dark:text-slate-200">{getServiceLabel(doc.serviceActuel)}</p>
             </div>
             {doc.destinataireExterne && (
               <div className="col-span-2">

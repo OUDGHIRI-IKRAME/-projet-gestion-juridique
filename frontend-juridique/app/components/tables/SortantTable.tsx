@@ -12,6 +12,7 @@ interface SortantTableProps {
   onView: (doc: CourrierSimule) => void;
   onTransfer: (doc: CourrierSimule) => void;
   onDelete: (doc: CourrierSimule) => void;
+  onOpen?: (doc: CourrierSimule) => void;
   onMarquerEnvoye: (id: number) => void;
   onMarquerAttente: (id: number) => void;
   onAnnuler: (id: number) => void;
@@ -27,6 +28,7 @@ export function SortantTable({
   onView,
   onTransfer,
   onDelete,
+  onOpen,
   onMarquerEnvoye,
   onMarquerAttente,
   onAnnuler,
@@ -90,7 +92,7 @@ export function SortantTable({
               documents.map((doc) => {
                 const statutBrut = normalizeStatus(doc.statut);
                 const progress = getWorkflowProgress(doc.serviceActuelKey || doc.serviceActuel);
-                const delayDays = getDelayDays(doc.date);
+                const delayDays = getDelayDays(doc.dateRaw || doc.date);
                 const isLate = delayDays > 7;
 
                 return (
@@ -131,6 +133,7 @@ export function SortantTable({
                         <button onClick={() => onAnnuler(doc.id)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50">{cur.annulerCourrier}</button>
                       )}
                       <button onClick={() => onTransfer(doc)} className="text-slate-600 hover:text-slate-800 font-bold px-2 py-1 rounded hover:bg-slate-50">{cur.btnSuivant}</button>
+                      {onOpen && <button onClick={() => onOpen(doc)} className="text-emerald-600 hover:text-emerald-800 font-bold px-2 py-1 rounded hover:bg-emerald-50">{langue === "fr" ? "Ouvrir" : "فتح"}</button>}
                       <button onClick={() => onDelete(doc)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50">{cur.btnSupprimer}</button>
                     </td>
                   </tr>

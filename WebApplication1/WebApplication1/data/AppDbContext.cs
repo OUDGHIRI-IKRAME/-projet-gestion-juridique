@@ -22,6 +22,8 @@ namespace WebApplication1.Data
         public DbSet<ListItem> ListItems { get; set; }
         public DbSet<Substitute> Substitutes { get; set; }
         public DbSet<Retrait> Retraits { get; set; }
+        public DbSet<DocumentNote> DocumentNotes { get; set; }
+        public DbSet<DocumentModification> DocumentModifications { get; set; }
 
     }
 

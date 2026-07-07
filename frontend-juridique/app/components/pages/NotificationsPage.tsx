@@ -33,17 +33,22 @@ export function NotificationsPage({ langue, cur, token, BASE_URL, onExport }: Pr
   const [commentaires, setCommentaires] = useState<Record<number, string>>({});
 
   const fetchNotifications = async () => {
+    if (!token) return;
     try {
       const res = await fetch(`${BASE_URL}/api/Transactions/pending`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.ok) setNotifications(await res.json());
+      if (res.ok) {
+        const data = await res.json();
+        setNotifications(data);
+      }
     } catch (err) {
       console.error("Erreur fetch notifications:", err);
     }
   };
 
-  useEffect(() => { fetchNotifications(); }, []);
+  useEffect(() => { fetchNotifications(); }, [token]);
+  useEffect(() => { const interval = setInterval(fetchNotifications, 30000); return () => clearInterval(interval); }, [token]);
 
   const toggleSelect = (id: number) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);

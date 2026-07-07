@@ -149,7 +149,9 @@ export function getWorkflowProgress(serviceActuel: string): { step: number; tota
 }
 
 export function getDelayDays(dateStr: string): number {
+  if (!dateStr) return 0;
   const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 0;
   const now = new Date();
   return Math.floor((now.getTime() - d.getTime()) / (1000 * 60 * 60 * 24));
 }

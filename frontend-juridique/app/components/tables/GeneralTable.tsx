@@ -3,13 +3,14 @@
 import { CourrierSimule } from "@/app/types";
 import { normalizeStatus } from "@/lib/utils";
 import { ExportFormat } from "@/lib/exportImport";
-import { getWorkflowProgress, getDelayDays } from "@/lib/constants";
+import { getWorkflowProgress, getDelayDays, getServiceLabel } from "@/lib/constants";
 
 interface GeneralTableProps {
   documents: CourrierSimule[];
   onView: (doc: CourrierSimule) => void;
   onTransfer: (doc: CourrierSimule) => void;
   onDelete: (doc: CourrierSimule) => void;
+  onOpen?: (doc: CourrierSimule) => void;
   cur: any;
   langue?: "fr" | "ar";
   onExport?: (format: ExportFormat) => void;
@@ -23,6 +24,7 @@ export function GeneralTable({
   onView,
   onTransfer,
   onDelete,
+  onOpen,
   cur,
   langue = "fr",
   onExport,
@@ -81,7 +83,7 @@ export function GeneralTable({
               documents.map((doc) => {
                 const typeColor = doc.type === "entrant-juridique" ? "bg-purple-50 text-purple-700" : "bg-blue-50 text-blue-700";
                 const progress = getWorkflowProgress(doc.serviceActuelKey || doc.serviceActuel);
-                const delayDays = getDelayDays(doc.date);
+                const delayDays = getDelayDays(doc.dateRaw || doc.date);
                 const isLate = delayDays > 7;
 
                 return (
@@ -105,7 +107,7 @@ export function GeneralTable({
                     </td>
                     <td className="p-3 text-slate-500">{doc.date}</td>
                     <td className="p-3 text-slate-700">{doc.source}</td>
-                    <td className="p-3 text-slate-700">{doc.serviceActuel}</td>
+                    <td className="p-3 text-slate-700">{getServiceLabel(doc.serviceActuel, langue || "fr")}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -116,6 +118,7 @@ export function GeneralTable({
                     </td>
                     <td className="p-3 text-center space-x-1 whitespace-nowrap">
                       <button type="button" onClick={() => onView(doc)} className="text-blue-600 hover:text-blue-800 font-bold px-2 py-1 rounded hover:bg-blue-50">{cur.btnVoir}</button>
+                      {onOpen && <button type="button" onClick={() => onOpen(doc)} className="text-emerald-600 hover:text-emerald-800 font-bold px-2 py-1 rounded hover:bg-emerald-50">{langue === "fr" ? "Ouvrir" : "فتح"}</button>}
                       <button onClick={() => onTransfer(doc)} className="text-slate-600 hover:text-slate-800 font-bold px-2 py-1 rounded hover:bg-slate-50">{cur.btnSuivant}</button>
                       <button onClick={() => onDelete(doc)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50">{cur.btnSupprimer}</button>
                     </td>

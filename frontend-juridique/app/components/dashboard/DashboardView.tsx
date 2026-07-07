@@ -29,6 +29,7 @@ interface DashboardViewProps {
   onMarquerEnvoye: (id: number) => void;
   onMarquerAttente: (id: number) => void;
   onAnnuler: (id: number) => void;
+  onOpenDoc?: (doc: CourrierSimule) => void;
   onNavigate: (view: VueActive) => void;
   cur: any;
   langue: "fr" | "ar";
@@ -62,6 +63,7 @@ export function DashboardView({
   onMarquerEnvoye,
   onMarquerAttente,
   onAnnuler,
+  onOpenDoc,
   onNavigate,
   cur,
   langue,
@@ -177,6 +179,7 @@ export function DashboardView({
         onView={onViewDoc}
         onTransfer={onTransferDoc}
         onDelete={onDeleteDoc}
+        onOpen={onOpenDoc}
         cur={cur}
         langue={langue}
         onExport={onExportGeneral}
@@ -192,6 +195,7 @@ export function DashboardView({
         onView={onViewDoc}
         onTransfer={onTransferDoc}
         onDelete={onDeleteDoc}
+        onOpen={onOpenDoc}
         onMarquerEnvoye={onMarquerEnvoye}
         onMarquerAttente={onMarquerAttente}
         onAnnuler={onAnnuler}

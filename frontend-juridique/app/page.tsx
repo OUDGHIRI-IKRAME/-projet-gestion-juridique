@@ -18,6 +18,7 @@ import { GestionListes } from "@/app/components/admin/GestionListes";
 import { NotificationsPage } from "@/app/components/pages/NotificationsPage";
 import { TransactionsPage } from "@/app/components/pages/TransactionsPage";
 import { ProfilPage } from "@/app/components/pages/ProfilPage";
+import { WorkspaceModal } from "@/app/components/modals/WorkspaceModal";
 import { ArchiveRetraitPage } from "@/app/components/pages/ArchiveRetraitPage";
 
 import { translations } from "@/lib/translations";
@@ -122,30 +123,33 @@ export default function Home() {
   const [batchTransferDocs, setBatchTransferDocs] = useState<CourrierSimule[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
+  const [workspaceDocId, setWorkspaceDocId] = useState<number | null>(null);
 
   const { listeCourriers, refetch } = useDocuments(token, langue, vueActive);
   const BASE_URL = "http://localhost:5200";
 
+  const fetchPending = async () => {
+    if (!token) return;
+    try {
+      const res = await fetch(`${BASE_URL}/api/Transactions/count-pending`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPendingNotifications(data.count || 0);
+      }
+      const statsRes = await fetch(`${BASE_URL}/api/Transactions/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (statsRes.ok) {
+        const statsData = await statsRes.json();
+        setTransactionStats(statsData);
+      }
+    } catch (err) { /* silent */ }
+  };
+
   useEffect(() => {
     if (!token) return;
-    const fetchPending = async () => {
-      try {
-        const res = await fetch(`${BASE_URL}/api/Transactions/count-pending`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setPendingNotifications(data.count || 0);
-        }
-        const statsRes = await fetch(`${BASE_URL}/api/Transactions/stats`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          setTransactionStats(statsData);
-        }
-      } catch (err) { /* silent */ }
-    };
     fetchPending();
     const interval = setInterval(fetchPending, 30000);
     return () => clearInterval(interval);
@@ -419,7 +423,7 @@ export default function Home() {
 
   const recentActivity = visibleCourriers.slice(0, 6).map((d) => ({
     type: d.type,
-    label: d.serviceActuel,
+    label: getServiceLabel(d.serviceActuel, langue),
     reference: d.reference,
     time: d.date,
     doc: d,
@@ -556,7 +560,7 @@ export default function Home() {
       [cur.exporterType]: doc.type,
       [cur.exporterDate]: doc.date,
       [cur.exporterSource]: doc.source,
-      [cur.exporterService]: doc.serviceActuel,
+      [cur.exporterService]: getServiceLabel(doc.serviceActuel, langue),
       [cur.exporterStatut]: doc.statut
     }));
     exportRows(rows, "courriers_entrants", format, cur.entrants);
@@ -582,7 +586,7 @@ export default function Home() {
       [cur.exporterType]: doc.type,
       [cur.exporterDate]: doc.date,
       [cur.exporterSource]: doc.source,
-      [cur.exporterService]: doc.serviceActuel,
+      [cur.exporterService]: getServiceLabel(doc.serviceActuel, langue),
       [cur.exporterStatut]: doc.statut
     }));
     exportRows(rows, "selection_export", format, `${cur.entrants} (${docs.length})`);
@@ -972,6 +976,7 @@ export default function Home() {
         ? `${successCount} transfert(s) réussi(s)${failCount > 0 ? ` (${failCount} échec(s) ${lastError})` : ""}`
         : `تم ${successCount} تحويل بنجاح${failCount > 0 ? ` (${failCount} فشل ${lastError})` : ""}`);
       await refetch();
+      fetchPending();
     } else {
       const hint = lastError.includes("401")
         ? (langue === "fr" ? "\n\nToken invalide. Reconnectez-vous." : "\n\nرمز غير صالح. أعد تسجيل الدخول.")
@@ -1161,6 +1166,7 @@ export default function Home() {
               onViewDoc={(doc: CourrierSimule) => { setSelectedDocument(doc); setShowModal(true); }}
               onTransferDoc={openTransfer}
               onDeleteDoc={handleDelete}
+              onOpenDoc={(doc: CourrierSimule) => setWorkspaceDocId(doc.id)}
               onMarquerEnvoye={(id: number) => changerStatutSortant(id, "Envoye")}
               onMarquerAttente={(id: number) => changerStatutSortant(id, "EnAttente")}
               onAnnuler={(id: number) => changerStatutSortant(id, "Annule")}
@@ -1332,7 +1338,7 @@ export default function Home() {
                             </td>
                             <td className="p-3 text-slate-500">{doc.date}</td>
                             <td className="p-3">{doc.source}</td>
-                            <td className="p-3">{doc.serviceActuel}</td>
+                            <td className="p-3">{getServiceLabel(doc.serviceActuel, langue)}</td>
                             <td className="p-3">
                               <div className="flex flex-wrap justify-center gap-1">
                                 <button
@@ -1477,7 +1483,7 @@ export default function Home() {
                             <tr key={doc.id} className="border-b border-slate-100 hover:bg-slate-50">
                               <td className="p-3 font-mono">{doc.reference}</td>
                               <td className="p-3 font-bold">{doc.objet}</td>
-                              <td className="p-3">{doc.serviceActuel}</td>
+                              <td className="p-3">{getServiceLabel(doc.serviceActuel, langue)}</td>
                               <td className="p-3">
                                 {normalizeStatus(doc.statut) === "Archive" ? cur.archiveDef : cur.enCours}
                               </td>
@@ -1524,7 +1530,7 @@ export default function Home() {
                             <tr key={doc.id} className="border-b border-slate-100 hover:bg-red-50/30">
                               <td className="p-3 font-mono">{doc.reference}</td>
                               <td className="p-3 font-bold">{doc.objet}</td>
-                              <td className="p-3">{doc.serviceActuel}</td>
+                              <td className="p-3">{getServiceLabel(doc.serviceActuel, langue)}</td>
                               <td className="p-3 text-center">
                                 <button
                                   type="button"
@@ -1604,7 +1610,7 @@ export default function Home() {
                     <select value={searchFilterService} onChange={(e) => setSearchFilterService(e.target.value)} className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-700 dark:text-slate-200 outline-none">
                       <option value="">{langue === "fr" ? "Tous les services" : "جميع المصالح"}</option>
                       {[...new Set(visibleCourriers.map(d => d.serviceActuel))].sort().map(svc => (
-                        <option key={svc} value={svc}>{svc}</option>
+                        <option key={svc} value={svc}>{getServiceLabel(svc, langue)}</option>
                       ))}
                     </select>
                     <select value={searchFilterType} onChange={(e) => setSearchFilterType(e.target.value)} className="px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg text-[11px] font-bold bg-white dark:bg-slate-700 dark:text-slate-200 outline-none">
@@ -1690,7 +1696,7 @@ export default function Home() {
                                 <td className="p-3 text-slate-600">{doc.type === "entrant-admin" ? cur.admin : doc.type === "entrant-juridique" ? cur.juridique : doc.type}</td>
                                 <td className="p-3 text-slate-500">{doc.date}</td>
                                 <td className="p-3">{doc.source}</td>
-                                <td className="p-3">{doc.serviceActuel}</td>
+                            <td className="p-3">{getServiceLabel(doc.serviceActuel, langue)}</td>
                                 <td className="p-3">
                                   <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                                     normalizeStatus(doc.statut) === "Archive" ? "bg-slate-100 text-slate-600" :
@@ -2089,6 +2095,21 @@ export default function Home() {
             </div>
           </div>
         </div>
+      )}
+      {/* Workspace Modal */}
+      {workspaceDocId && (
+        <WorkspaceModal
+          docId={workspaceDocId}
+          onClose={() => setWorkspaceDocId(null)}
+          token={token}
+          BASE_URL={BASE_URL}
+          langue={langue}
+          cur={cur}
+          onTransfer={(doc: any) => {
+            setWorkspaceDocId(null);
+            openTransfer(doc);
+          }}
+        />
       )}
     </div>
   );

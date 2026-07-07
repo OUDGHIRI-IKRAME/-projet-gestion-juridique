@@ -137,8 +137,29 @@ namespace WebApplication1.Controllers
             transaction.Statut = StatutTransaction.Accepte;
             transaction.Commentaire = dto.Commentaire;
 
-            transaction.Document.ServiceActuel = transaction.ServiceDestination;
-            transaction.Document.StatutActuel = StatutDossier.EnCours;
+            if (transaction.DoitRevenir)
+            {
+                transaction.Document.ServiceActuel = transaction.ServiceOrigine;
+                transaction.Document.StatutActuel = StatutDossier.EnInstance;
+
+                var retourTransaction = new Transaction
+                {
+                    DocumentId = transaction.DocumentId,
+                    ServiceOrigine = transaction.ServiceDestination,
+                    ServiceDestination = transaction.ServiceOrigine,
+                    DateTransaction = DateTime.Now,
+                    Remarques = $"Document retourné automatiquement (doitRevenir)",
+                    UtilisateurId = userId,
+                    Statut = StatutTransaction.EnAttente,
+                    DoitRevenir = false
+                };
+                _context.Transactions.Add(retourTransaction);
+            }
+            else
+            {
+                transaction.Document.ServiceActuel = transaction.ServiceDestination;
+                transaction.Document.StatutActuel = StatutDossier.EnCours;
+            }
 
             await _context.SaveChangesAsync();
 
@@ -170,7 +191,7 @@ namespace WebApplication1.Controllers
             transaction.Statut = StatutTransaction.Refuse;
             transaction.MotifRefus = dto.Commentaire;
 
-            if (dto.DoitRevenir)
+            if (transaction.DoitRevenir || dto.DoitRevenir)
             {
                 transaction.DoitRevenir = true;
                 transaction.Document.ServiceActuel = transaction.ServiceOrigine;
@@ -284,7 +305,7 @@ namespace WebApplication1.Controllers
 
             var query = _context.Transactions
                 .Include(t => t.Document)
-                .Where(t => t.DoitRevenir && t.Statut == StatutTransaction.Refuse);
+                .Where(t => t.DoitRevenir && (t.Statut == StatutTransaction.Refuse || t.Statut == StatutTransaction.EnAttente));
 
             if (!isAdminLike)
             {
