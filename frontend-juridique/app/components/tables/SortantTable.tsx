@@ -77,8 +77,8 @@ export function SortantTable({
               <th className="p-3 text-start">{cur.tblType}</th>
               <th className="p-3 text-start">{cur.tblDate}</th>
               <th className="p-3 text-start">{cur.tblSource}</th>
-              <th className="p-3 text-start">{langue === "fr" ? "Mahkama origine" : "المحكمة المصدرة"}</th>
-              <th className="p-3 text-start">{langue === "fr" ? "Mahkama dest." : "المحكمة المستقبلة"}</th>
+              <th className="p-3 text-start">{langue === "fr" ? "Tribunal origine" : "المحكمة المصدرة"}</th>
+              <th className="p-3 text-start">{langue === "fr" ? "Tribunal dest." : "المحكمة المستقبلة"}</th>
               <th className="p-3 text-center">{langue === "fr" ? "Avancement" : "التقدم"}</th>
               <th className="p-3 text-center">{cur.tblActions}</th>
             </tr>
@@ -101,6 +101,9 @@ export function SortantTable({
                       <div className="flex items-center gap-1.5">
                         {isLate && <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0"></span>}
                         {doc.objet}
+                        {doc.filePath && (
+                          <span className="text-amber-500 flex-shrink-0" title={doc.filePath}>📎</span>
+                        )}
                       </div>
                     </td>
                     <td className="p-3 font-mono font-bold text-slate-600">{doc.reference}</td>
@@ -133,7 +136,6 @@ export function SortantTable({
                         <button onClick={() => onAnnuler(doc.id)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50">{cur.annulerCourrier}</button>
                       )}
                       <button onClick={() => onTransfer(doc)} className="text-slate-600 hover:text-slate-800 font-bold px-2 py-1 rounded hover:bg-slate-50">{cur.btnSuivant}</button>
-                      {onOpen && <button onClick={() => onOpen(doc)} className="text-emerald-600 hover:text-emerald-800 font-bold px-2 py-1 rounded hover:bg-emerald-50">{langue === "fr" ? "Ouvrir" : "فتح"}</button>}
                       <button onClick={() => onDelete(doc)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50">{cur.btnSupprimer}</button>
                     </td>
                   </tr>

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { CourrierSimule } from "@/app/types";
 import { normalizeStatus } from "@/lib/utils";
 import { ExportFormat } from "@/lib/exportImport";
@@ -14,6 +15,7 @@ interface GeneralTableProps {
   cur: any;
   langue?: "fr" | "ar";
   onExport?: (format: ExportFormat) => void;
+  onImportExcel?: (file: File) => void;
   selectedIds?: number[];
   onToggleSelect?: (id: number) => void;
   onSelectAll?: () => void;
@@ -28,12 +30,14 @@ export function GeneralTable({
   cur,
   langue = "fr",
   onExport,
+  onImportExcel,
   selectedIds = [],
   onToggleSelect,
   onSelectAll,
 }: GeneralTableProps) {
   const allSelected = documents.length > 0 && documents.every((d) => selectedIds.includes(d.id));
   const someSelected = selectedIds.length > 0 && !allSelected;
+  const importExcelRef = useRef<HTMLInputElement>(null);
 
   return (
     <div className="bg-white rounded-xl border border-slate-300 shadow-sm overflow-hidden">
@@ -50,6 +54,12 @@ export function GeneralTable({
               <button type="button" onClick={() => onExport("excel")} className="px-2 py-1 rounded bg-emerald-50 text-emerald-700 text-[10px] font-bold border border-emerald-200 hover:bg-emerald-100">Excel</button>
               <button type="button" onClick={() => onExport("word")} className="px-2 py-1 rounded bg-blue-50 text-blue-700 text-[10px] font-bold border border-blue-200 hover:bg-blue-100">Word</button>
             </div>
+          )}
+          {onImportExcel && (
+            <label className="px-2 py-1 rounded bg-violet-600 text-white text-[10px] font-bold border border-violet-700 hover:bg-violet-700 cursor-pointer">
+              📥 {langue === "fr" ? "Import Excel" : "استيراد Excel"}
+              <input ref={importExcelRef} type="file" accept=".xlsx,.xls" onChange={(e) => { const f = e.target.files?.[0]; if (f && onImportExcel) onImportExcel(f); e.target.value = ""; }} className="hidden" />
+            </label>
           )}
         </div>
       </div>
@@ -97,6 +107,9 @@ export function GeneralTable({
                       <div className="flex items-center gap-1.5">
                         {isLate && <span className="w-1.5 h-1.5 rounded-full bg-red-500 flex-shrink-0" title={`${delayDays} jours`}></span>}
                         {doc.objet}
+                        {doc.filePath && (
+                          <span className="text-amber-500 flex-shrink-0" title={doc.filePath}>📎</span>
+                        )}
                       </div>
                     </td>
                     <td className="p-3 font-mono font-bold text-slate-600">{doc.reference}</td>
@@ -107,7 +120,7 @@ export function GeneralTable({
                     </td>
                     <td className="p-3 text-slate-500">{doc.date}</td>
                     <td className="p-3 text-slate-700">{doc.source}</td>
-                    <td className="p-3 text-slate-700">{getServiceLabel(doc.serviceActuel, langue || "fr")}</td>
+                    <td className="p-3 text-slate-700">{doc.serviceActuel}</td>
                     <td className="p-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-1.5 bg-slate-200 rounded-full overflow-hidden">
@@ -118,7 +131,6 @@ export function GeneralTable({
                     </td>
                     <td className="p-3 text-center space-x-1 whitespace-nowrap">
                       <button type="button" onClick={() => onView(doc)} className="text-blue-600 hover:text-blue-800 font-bold px-2 py-1 rounded hover:bg-blue-50">{cur.btnVoir}</button>
-                      {onOpen && <button type="button" onClick={() => onOpen(doc)} className="text-emerald-600 hover:text-emerald-800 font-bold px-2 py-1 rounded hover:bg-emerald-50">{langue === "fr" ? "Ouvrir" : "فتح"}</button>}
                       <button onClick={() => onTransfer(doc)} className="text-slate-600 hover:text-slate-800 font-bold px-2 py-1 rounded hover:bg-slate-50">{cur.btnSuivant}</button>
                       <button onClick={() => onDelete(doc)} className="text-red-600 hover:text-red-800 font-bold px-2 py-1 rounded hover:bg-red-50">{cur.btnSupprimer}</button>
                     </td>

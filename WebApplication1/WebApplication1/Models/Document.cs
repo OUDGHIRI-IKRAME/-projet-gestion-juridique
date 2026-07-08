@@ -21,6 +21,9 @@ namespace WebApplication1.Models
 
         // Suppression logique
         public bool EstSupprime { get; set; } = false;
+
+        // Fichier joint
+        public string? FilePath { get; set; }
     }
 
 }

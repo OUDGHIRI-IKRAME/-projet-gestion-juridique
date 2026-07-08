@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CourrierAdminController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -101,7 +103,8 @@ namespace WebApplication1.Controllers
                     DateCreation = DateTime.Now,
                     ServiceActuel = ServiceTribunal.BureauOrdre,
                     StatutActuel = StatutDossier.Nouveau,
-                    NumeroBureauOrdre = dto.NumeroOrdre
+                    NumeroBureauOrdre = dto.NumeroOrdre,
+                    Transmissible = dto.Transmissible
                 };
 
                 _context.CourriersAdministratifs.Add(courrier);
@@ -170,10 +173,6 @@ namespace WebApplication1.Controllers
                         };
                         _context.Transactions.Add(transaction);
                     }
-                }
-                else
-                {
-                    return BadRequest(new { error = "Mode de traitement invalide" });
                 }
 
                 await _context.SaveChangesAsync();
@@ -295,6 +294,7 @@ namespace WebApplication1.Controllers
         public string? Source { get; set; }
         public string? NumeroReference { get; set; }
         public DateTime DernierTransfert { get; set; }
+        public bool Transmissible { get; set; } = true;
     }
     public class CourrierAdminDto
     {
@@ -305,9 +305,10 @@ namespace WebApplication1.Controllers
         public string? TypeCircuit { get; set; }
         public string? FilePath { get; set; }
         public string? NumeroReference { get; set; }
+        public bool Transmissible { get; set; } = true;
 
         // ===== NOUVEAUX CHAMPS POUR LES MODES =====
-        public string ModeTraitement { get; set; } // "archivage", "unique", "diffusion"
+        public string? ModeTraitement { get; set; } // "archivage", "unique", "diffusion"
         public string? ServiceDestinataire { get; set; } // Pour "unique" (ex: "OuvertureDossier")
         public List<string>? ServicesDiffusion { get; set; } // Pour "diffusion" (ex: ["Service1", "Service2"])
     }

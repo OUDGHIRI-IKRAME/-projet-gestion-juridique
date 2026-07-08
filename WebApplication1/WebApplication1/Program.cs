@@ -65,6 +65,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("AllowReactApp");
 
+app.UseStaticFiles();
+
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
@@ -76,26 +78,6 @@ using (var scope = app.Services.CreateScope())
     try
     {
         context.Database.Migrate();
-        
-        // ========== NETTOYAGE: supprimer tous les documents et transferts ==========
-        try
-        {
-            context.ChangeTracker.Clear();
-            context.Database.ExecuteSqlRaw("DELETE FROM DocumentModifications");
-            context.Database.ExecuteSqlRaw("DELETE FROM DocumentNotes");
-            context.Database.ExecuteSqlRaw("DELETE FROM ActionsJuridiques");
-            context.Database.ExecuteSqlRaw("DELETE FROM Transactions");
-            context.Database.ExecuteSqlRaw("DELETE FROM Retraits");
-            context.Database.ExecuteSqlRaw("DELETE FROM CourriersAdministratifs");
-            context.Database.ExecuteSqlRaw("DELETE FROM DossiersJuridiques");
-            context.Database.ExecuteSqlRaw("DELETE FROM CourriersSortants");
-            context.Database.ExecuteSqlRaw("DELETE FROM Documents");
-            Console.WriteLine(">>> Base nettoyée: tous les documents supprimés.");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"Nettoyage ignoré: {ex.Message}");
-        }
 
         context.ChangeTracker.Clear();
         var admin = context.Utilisateurs.FirstOrDefault(u => u.Login == "admin");

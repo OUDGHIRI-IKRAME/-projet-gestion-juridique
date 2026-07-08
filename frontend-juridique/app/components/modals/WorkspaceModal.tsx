@@ -20,8 +20,8 @@ interface WorkspaceDoc {
   DateEntree?: string;
   TypeCircuit?: string;
   MotifException?: string;
-  ServiceActuel: number;
-  StatutActuel: number;
+  ServiceActuel: any;
+  StatutActuel: any;
   FilePath?: string;
   NumeroBureauOrdre?: string;
   EstSupprime?: boolean;
@@ -97,7 +97,7 @@ export function WorkspaceModal({ docId, onClose, token, BASE_URL, langue, cur, o
     MustacharMoqarir: langue === "fr" ? "Conseil/rapports" : "المستشار/التقارير",
     TaslimNusakh: langue === "fr" ? "Remise de copies" : "تسليم النسخ",
     Tabligh: langue === "fr" ? "Notification" : "الإبلاغ",
-    TasfiyatSawa2ir: langue === "fr" ? "Règlement" : "تسوية Affairs",
+    TasfiyatSawa2ir: langue === "fr" ? "Règlement des dépens" : "تصفية الصوائر",
     Archive: langue === "fr" ? "Archives" : "الأرشيف",
     BureauNotification: langue === "fr" ? "Notification" : "مكتب الإخطار",
     BureauExpertise: langue === "fr" ? "Expertise" : "مكتب الخبرة",
@@ -108,7 +108,7 @@ export function WorkspaceModal({ docId, onClose, token, BASE_URL, langue, cur, o
     ProcduresCommissaireRoyal: langue === "fr" ? "Commissaire Royal" : "إجراءات المندوب الملكي",
     GestionPourvoisCassation: langue === "fr" ? "Pourvois" : "الطعون بالنقض",
     RemiseCopieJugement: langue === "fr" ? "Copie jugement" : "تسليم نسخ الحكم",
-    Greffe: langue === "fr" ? "Greffe" : "الgreffe",
+    Greffe: langue === "fr" ? "Greffe" : "القلم",
     Direction: langue === "fr" ? "Direction" : "المديرية",
     EfficaciteJudiciaire: langue === "fr" ? "Efficacité" : "الفعالية القضائية",
     Enregistrement: langue === "fr" ? "Enregistrement" : "التسجيل",

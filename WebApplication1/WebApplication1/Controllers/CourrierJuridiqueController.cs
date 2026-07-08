@@ -10,6 +10,7 @@ namespace WebApplication1.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CourrierJuridiqueController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -53,6 +54,7 @@ namespace WebApplication1.Controllers
                     c.DateCreation,
                     c.ServiceActuel,
                     c.StatutActuel,
+                    c.FilePath,
                     DernierTransfert = c.Transactions
                         .OrderByDescending(t => t.DateTransaction)
                         .Select(t => (System.DateTime?)t.DateTransaction)
@@ -72,11 +74,21 @@ namespace WebApplication1.Controllers
             {
                 "Bureau d'ordre et bureau administratif" => ServiceTribunal.BureauOrdre,
                 "Bureau de Gestion des Dossiers Judiciaires" => ServiceTribunal.OuvertureDossier,
-                "KitabaKhasa" => ServiceTribunal.KitabaKhasa,
                 "JalsatWaIjra2at" => ServiceTribunal.JalsatWaIjra2at,
                 "TaslimNusakh" => ServiceTribunal.TaslimNusakh,
                 "Bureau de Notification" => ServiceTribunal.BureauNotification,
                 "Archive" => ServiceTribunal.Archive,
+                "Bureau d'expertise" => ServiceTribunal.BureauExpertise,
+                "Bureau des procédures du commissaire royal" => ServiceTribunal.ProcduresCommissaireRoyal,
+                "Bureau de Gestion des Pourvois en Cassation" => ServiceTribunal.GestionPourvoisCassation,
+                "Remise de copie de jugement" => ServiceTribunal.RemiseCopieJugement,
+                "Bureau de Recouvrement" => ServiceTribunal.BureauRecouvrement,
+                "Caisse du Tribunal" => ServiceTribunal.CaisseTribunal,
+                "Service de Gestion Financière" => ServiceTribunal.GestionFinanciere,
+                "Bureau de l'efficacité judiciaire et des statistiques" => ServiceTribunal.EfficaciteJudiciaire,
+                "Cellule informatique" => ServiceTribunal.CelluleInformatique,
+                "Direction" => ServiceTribunal.Direction,
+                "Greffe" => ServiceTribunal.Greffe,
                 _ => ServiceTribunal.BureauOrdre
             };
         }

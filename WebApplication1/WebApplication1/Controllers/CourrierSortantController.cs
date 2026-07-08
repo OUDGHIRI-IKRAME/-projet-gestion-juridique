@@ -11,6 +11,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class CourrierSortantController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -88,6 +89,7 @@ namespace WebApplication1.Controllers
                     c.DateEnvoi,
                     c.TribunalOrigine,
                     c.TribunalDestination,
+                    c.FilePath,
                     DernierTransfert = c.Transactions
                         .OrderByDescending(t => t.DateTransaction)
                         .Select(t => (DateTime?)t.DateTransaction)

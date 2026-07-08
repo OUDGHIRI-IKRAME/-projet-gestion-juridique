@@ -86,7 +86,7 @@ namespace WebApplication1.Controllers
                 transactionIds.Add(transaction.Id);
             }
 
-            document.ServiceActuel = destinations[destinations.Count - 1];
+            document.ServiceActuel = serviceDestination;
             document.StatutActuel = StatutDossier.EnInstance;
 
             await _context.SaveChangesAsync();

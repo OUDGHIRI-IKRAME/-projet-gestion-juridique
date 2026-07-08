@@ -34,6 +34,7 @@ interface DashboardViewProps {
   cur: any;
   langue: "fr" | "ar";
   onExportGeneral?: (format: ExportFormat) => void;
+  onImportExcel?: (file: File) => void;
   onExportSortant?: (format: ExportFormat) => void;
   docsPerStep?: number[];
   workflowIndex?: number;
@@ -68,6 +69,7 @@ export function DashboardView({
   cur,
   langue,
   onExportGeneral,
+  onImportExcel,
   onExportSortant,
   docsPerStep = [],
   workflowIndex = 0,
@@ -183,6 +185,7 @@ export function DashboardView({
         cur={cur}
         langue={langue}
         onExport={onExportGeneral}
+        onImportExcel={onImportExcel}
         selectedIds={selectedDocIds}
         onToggleSelect={onToggleDocSelect}
         onSelectAll={onSelectAllDocs}

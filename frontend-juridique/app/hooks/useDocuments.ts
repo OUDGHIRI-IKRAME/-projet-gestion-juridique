@@ -57,8 +57,6 @@ export function useDocuments(token: string | null, langue: Langue, vueActive: Vu
         }));
         allDocs = [...allDocs, ...formatted];
       } else if (adminRes.status === 401) {
-        // Token invalide
-        alert("Session expirée, veuillez vous reconnecter");
         logout();
         return;
       } else {
@@ -84,7 +82,6 @@ export function useDocuments(token: string | null, langue: Langue, vueActive: Vu
         }));
         allDocs = [...allDocs, ...formatted];
       } else if (juridiqueRes.status === 401) {
-        alert("Session expirée, veuillez vous reconnecter");
         logout();
         return;
       } else {
@@ -119,7 +116,6 @@ export function useDocuments(token: string | null, langue: Langue, vueActive: Vu
         });
         allDocs = [...allDocs, ...formatted];
       } else if (sortantRes.status === 401) {
-        alert("Session expirée, veuillez vous reconnecter");
         logout();
         return;
       } else {

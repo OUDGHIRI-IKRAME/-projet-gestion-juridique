@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,6 +12,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -29,8 +31,7 @@ namespace WebApplication1.Controllers
                     u.Login,
                     u.Nom,
                     u.Role,
-                    u.Service,
-                    u.PasswordHash
+                    u.Service
                 })
                 .ToListAsync();
             return Ok(users);
@@ -48,8 +49,7 @@ namespace WebApplication1.Controllers
                 user.Login,
                 user.Nom,
                 user.Role,
-                user.Service,
-                user.PasswordHash
+                user.Service
             });
         }
 

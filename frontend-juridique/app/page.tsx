@@ -666,6 +666,8 @@ export default function Home() {
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [importData, setImportData] = useState<ExportRow[]>([]);
   const [importFileName, setImportFileName] = useState("");
+  const [importFile, setImportFile] = useState<File | null>(null);
+  const quickImportRef = useRef<HTMLInputElement>(null);
 
   const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -674,6 +676,7 @@ export default function Home() {
       const data = await importFromFile(file);
       setImportData(data);
       setImportFileName(file.name);
+      setImportFile(file);
       setImportModalOpen(true);
     } catch (err: any) {
       alert(err.message || "Erreur d'importation");
@@ -683,23 +686,60 @@ export default function Home() {
 
   const confirmImport = async () => {
     if (importData.length === 0) return;
-    const token = localStorage.getItem("token");
     let success = 0;
     let errors = 0;
     for (const row of importData) {
       try {
-        const res = await fetch(`${BASE_URL}/api/CourrierAdmin`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-          body: JSON.stringify({
-            reference: row["Référence"] || row["Reference"] || row["المرجع"] || row["ref"] || "",
-            objet: row["Titre"] || row["Objet"] || row["العنوان"] || row["title"] || "",
-            source: row["Source"] || row["المصدر"] || "",
-            expediteur: row["Source"] || row["المصدر"] || "",
-          })
-        });
-        if (res.ok) success++;
-        else errors++;
+        const docType = (row["النوع"] || row["Type"] || row["type"] || "entrant-admin").toString().toLowerCase();
+        const ref = row["المرجع"] || row["Référence"] || row["Reference"] || row["ref"] || `IMP-${Date.now()}`;
+        const source = row["المصدر"] || row["Source"] || row["source"] || "";
+        const objet = row["العنوان"] || row["Titre"] || row["Objet"] || row["title"] || "";
+        const etat = row["الحالة"] || row["État"] || row["Etat"] || "";
+        const dateStr = row["التاريخ"] || row["Date"] || row["date"] || "";
+
+        let res;
+        if (docType.includes("juridique")) {
+          res = await fetch(`${BASE_URL}/api/CourrierJuridique`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              reference: String(ref),
+              objet: String(objet),
+              provenance: String(source),
+              demandeur: String(source),
+              etatGlobal: String(etat) || "En cours",
+              typeCircuit: "classique",
+              etapeService: 1,
+              numeroBureauOrdre: String(ref),
+            })
+          });
+        } else {
+          res = await fetch(`${BASE_URL}/api/CourrierAdmin`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+            body: JSON.stringify({
+              numeroOrdre: String(ref),
+              expediteur: String(source),
+              objet: String(objet),
+              transmissible: true,
+            })
+          });
+        }
+        if (res.ok) {
+          const data = await res.json();
+          const docId = data.courrier?.id || data.dossier?.id || data.id;
+          // Upload the original file once for the first doc only
+          if (docId && importFile && success === 0) {
+            const fd = new FormData();
+            fd.append("file", importFile);
+            await fetch(`${BASE_URL}/api/FileUpload/${docId}`, {
+              method: "POST",
+              headers: { Authorization: `Bearer ${token}` },
+              body: fd,
+            });
+          }
+          success++;
+        } else errors++;
       } catch { errors++; }
     }
     alert(langue === "fr"
@@ -707,6 +747,105 @@ export default function Home() {
       : `تم الاستيراد: ${success} نجاح, ${errors} أخطاء`);
     setImportModalOpen(false);
     setImportData([]);
+    setImportFile(null);
+    await refetch();
+  };
+
+  const handleImportExcelFile = async (file: File) => {
+    if (!token) return;
+    try {
+      const data = await importFromFile(file);
+      if (data.length === 0) {
+        alert(langue === "fr" ? "Aucune donnée trouvée dans le fichier" : "لم يتم العثور على بيانات في الملف");
+        return;
+      }
+      setImportData(data);
+      setImportFileName(file.name);
+      setImportFile(file);
+      setImportModalOpen(true);
+    } catch (err: any) {
+      alert(err.message || "Erreur d'importation");
+    }
+  };
+
+  const handleImportExcel = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+    try {
+      const data = await importFromFile(file);
+      if (data.length === 0) {
+        alert(langue === "fr" ? "Aucune donnée trouvée dans le fichier" : "لم يتم العثور على بيانات في الملف");
+        e.target.value = "";
+        return;
+      }
+      setImportData(data);
+      setImportFileName(file.name);
+      setImportFile(file);
+      setImportModalOpen(true);
+    } catch (err: any) {
+      alert(err.message || "Erreur d'importation");
+    }
+    e.target.value = "";
+  };
+
+  const handleQuickImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !token) return;
+    const ext = file.name.split(".").pop()?.toLowerCase() || "";
+    const baseName = file.name.replace(/\.[^.]+$/, "");
+    try {
+      let content = "";
+      if (ext === "csv" || ext === "txt") {
+        const text = await file.text();
+        const lines = text.split("\n").filter(l => l.trim());
+        content = lines.length > 1 ? `${lines.length} lignes` : lines[0] || "";
+      } else if (ext === "xlsx" || ext === "xls") {
+        const XLSX = await import("xlsx");
+        const data = await file.arrayBuffer();
+        const wb = XLSX.read(data, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws);
+        content = `${rows.length} lignes importées`;
+      } else if (ext === "doc" || ext === "docx") {
+        const mammoth = (await import("mammoth")).default;
+        const data = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer: data });
+        content = result.value.substring(0, 200) || "Document Word";
+      } else if (ext === "pdf") {
+        content = "Document PDF";
+      }
+      const res = await fetch(`${BASE_URL}/api/CourrierAdmin`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          numeroOrdre: `IMP-${Date.now()}`,
+          expediteur: "Import rapide",
+          objet: baseName,
+          transmissible: true,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const docId = data.courrier?.id;
+        // Upload the actual file
+        if (docId) {
+          const fd = new FormData();
+          fd.append("file", file);
+          await fetch(`${BASE_URL}/api/FileUpload/${docId}`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: fd,
+          });
+        }
+        await refetch();
+      } else {
+        alert(langue === "fr" ? "Erreur lors de l'import" : "خطأ أثناء الاستيراد");
+      }
+    } catch (err) {
+      console.error("Quick import error:", err);
+      alert(langue === "fr" ? "Erreur lors de l'import" : "خطأ أثناء الاستيراد");
+    }
+    e.target.value = "";
   };
 
   const handleFormSubmit = async (e: React.FormEvent) => {
@@ -825,6 +964,32 @@ export default function Home() {
       }
 
       const data = await res.json();
+      const docId = data.courrier?.id || data.dossier?.id || data.sortant?.id || data.id;
+
+      // Upload file if one was selected
+      const currentFile = vueActive === "entrant-admin" ? fichier : vueActive === "entrant-juridique" ? juridiqueFichier : fichierSortant;
+      if (docId && currentFile) {
+        const fd = new FormData();
+        fd.append("file", currentFile);
+        try {
+          const uploadRes = await fetch(`${BASE_URL}/api/FileUpload/${docId}`, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${token}` },
+            body: fd,
+          });
+          if (!uploadRes.ok) {
+            const errText = await uploadRes.text();
+            console.error("Upload failed:", uploadRes.status, errText);
+          }
+        } catch (uploadErr) {
+          console.error("Upload error:", uploadErr);
+        }
+      }
+
+      // Wait 500ms for DB to commit, then refetch
+      await new Promise(r => setTimeout(r, 500));
+      await refetch();
+
       alert(data.message || (langue === "fr" ? "Enregistré avec succès !" : "تم التسجيل بنجاح !"));
       await refetch();
       resetForm();
@@ -989,6 +1154,7 @@ export default function Home() {
     setTransferModalDoc(null);
     setBatchTransferDocs([]);
     setSelectedIds([]);
+    setSelectedDocIds([]);
     setSelectedServices([]);
     setTransferMessage("");
   };
@@ -1174,6 +1340,7 @@ export default function Home() {
               cur={cur}
               langue={langue}
               onExportGeneral={exportGeneralDocs}
+              onImportExcel={handleImportExcelFile}
               onExportSortant={exportSortantDocs}
               selectedDocIds={selectedDocIds}
               onToggleDocSelect={toggleDocSelect}
@@ -1231,9 +1398,9 @@ export default function Home() {
                         </button>
                       </>
                     )}
-                    <label className="px-2.5 py-1.5 rounded-lg bg-violet-50 text-violet-700 text-[10px] font-bold border border-violet-200 hover:bg-violet-100 cursor-pointer">
-                      {langue === "fr" ? "Importer" : "استيراد"}
-                      <input type="file" accept=".csv,.xlsx,.xls,.doc,.docx,.pdf" onChange={handleImportFile} className="hidden" />
+                    <label className="px-3 py-1.5 rounded-lg bg-violet-600 text-white text-[10px] font-bold border border-violet-700 hover:bg-violet-700 cursor-pointer flex items-center gap-1">
+                      📥 {langue === "fr" ? "Import Excel" : "استيراد Excel"}
+                      <input type="file" accept=".xlsx,.xls" onChange={handleImportExcel} className="hidden" />
                     </label>
                   </div>
                 </div>
@@ -1343,10 +1510,7 @@ export default function Home() {
                               <div className="flex flex-wrap justify-center gap-1">
                                 <button
                                   type="button"
-                                  onClick={() => {
-                                    setSelectedDocument(doc);
-                                    setShowModal(true);
-                                  }}
+                                  onClick={() => { setSelectedDocument(doc); setShowModal(true); }}
                                   className="px-2 py-1 rounded border border-blue-200 bg-blue-50 text-blue-700 text-[10px] font-bold"
                                 >
                                   {cur.btnVoir}
@@ -1992,6 +2156,8 @@ export default function Home() {
         <DetailModal
           doc={selectedDocument}
           onClose={() => { setShowModal(false); setHistoriqueActions([]); }}
+          onTransfer={(doc) => { setShowModal(false); setTransferModalDoc(doc); }}
+          onSaved={() => refetch()}
           historique={historiqueActions}
           cur={cur}
           langue={langue}

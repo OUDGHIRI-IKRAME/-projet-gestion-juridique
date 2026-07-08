@@ -23,19 +23,19 @@ namespace WebApplication1.Controllers
             _context = context;
         }
 
-        private string GetUserName()
+        private async Task<string> GetUserNameAsync()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return "Inconnu";
-            var user = _context.Utilisateurs.FindAsync(int.Parse(userId)).Result;
+            var user = await _context.Utilisateurs.FindAsync(int.Parse(userId));
             return user?.Nom ?? "Inconnu";
         }
 
-        private string GetUserService()
+        private async Task<string> GetUserServiceAsync()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (userId == null) return "";
-            var user = _context.Utilisateurs.FindAsync(int.Parse(userId)).Result;
+            var user = await _context.Utilisateurs.FindAsync(int.Parse(userId));
             return user?.Service ?? "";
         }
 
@@ -73,6 +73,7 @@ namespace WebApplication1.Controllers
                     dj.DateCreation, dj.DateEntree,
                     dj.TypeCircuit, dj.MotifException,
                     dj.ServiceActuel, dj.StatutActuel,
+                    dj.FilePath,
                     dj.EtapeJalsatActuelle, dj.EtatGlobal,
                     dj.Circuit, dj.EtapeService,
                     dj.JalsatTransaction, dj.TaslimTransaction,
@@ -93,6 +94,7 @@ namespace WebApplication1.Controllers
                     cs.DestinataireExterne,
                     cs.TribunalOrigine, cs.TribunalDestination,
                     cs.ServiceActuel, cs.StatutActuel,
+                    cs.FilePath,
                     cs.NumeroBureauOrdre, cs.EstSupprime,
                     transactions = cs.Transactions.Select(t => new
                     {
@@ -114,8 +116,8 @@ namespace WebApplication1.Controllers
             var doc = await _context.Documents.FindAsync(id);
             if (doc == null) return NotFound(new { error = "Document non trouvé" });
 
-            var userName = GetUserName();
-            var userService = GetUserService();
+            var userName = await GetUserNameAsync();
+            var userService = await GetUserServiceAsync();
             var modifications = new List<DocumentModification>();
 
             switch (doc)
@@ -271,8 +273,8 @@ namespace WebApplication1.Controllers
             {
                 DocumentId = id,
                 Contenu = dto.Contenu,
-                Auteur = GetUserName(),
-                Service = GetUserService(),
+                Auteur = await GetUserNameAsync(),
+                Service = await GetUserServiceAsync(),
                 DateCreation = DateTime.Now
             };
 

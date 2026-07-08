@@ -199,7 +199,49 @@ export function importFromFile(file: File): Promise<ExportRow[]> {
           const data = new Uint8Array(e.target?.result as ArrayBuffer);
           const wb = XLSX.read(data, { type: "array" });
           const ws = wb.Sheets[wb.SheetNames[0]];
-          const jsonData = XLSX.utils.sheet_to_json(ws) as ExportRow[];
+
+          // Find the header row by looking for known column names
+          const range = XLSX.utils.decode_range(ws["!ref"] || "A1");
+          let headerRow = -1;
+          const knownHeaders = ["العنوان", "الموضوع", "Titre", "Objet", "المرجع", "Référence", "Reference"];
+          for (let r = range.s.r; r <= range.e.r; r++) {
+            for (let c = range.s.c; c <= range.e.c; c++) {
+              const cell = ws[XLSX.utils.encode_cell({ r, c })];
+              if (cell && cell.v) {
+                const val = String(cell.v).trim();
+                if (knownHeaders.some(h => val.includes(h))) {
+                  headerRow = r;
+                  break;
+                }
+              }
+            }
+            if (headerRow >= 0) break;
+          }
+
+          let jsonData: ExportRow[];
+          if (headerRow >= 0) {
+            // Parse from the found header row
+            const headers: string[] = [];
+            for (let c = range.s.c; c <= range.e.c; c++) {
+              const cell = ws[XLSX.utils.encode_cell({ r: headerRow, c })];
+              headers.push(cell ? String(cell.v).trim() : "");
+            }
+            jsonData = [];
+            for (let r = headerRow + 1; r <= range.e.r; r++) {
+              const row: ExportRow = {};
+              let hasData = false;
+              for (let c = range.s.c; c < range.s.c + headers.length; c++) {
+                const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                const val = cell ? String(cell.v ?? "").trim() : "";
+                if (val) hasData = true;
+                row[headers[c - range.s.c]] = val;
+              }
+              if (hasData) jsonData.push(row);
+            }
+          } else {
+            // Fallback: standard parsing
+            jsonData = XLSX.utils.sheet_to_json(ws) as ExportRow[];
+          }
           resolve(jsonData);
         } catch (err) {
           reject(new Error("Erreur de lecture Excel / خطأ في قراءة Excel"));

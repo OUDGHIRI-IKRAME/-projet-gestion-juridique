@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Claims;
@@ -11,6 +12,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class ActionsJuridiquesController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -27,6 +29,7 @@ namespace WebApplication1.Controllers
             {
                 // Récupérer l'utilisateur connecté
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (userId == null) return Unauthorized();
                 var user = await _context.Utilisateurs.FindAsync(int.Parse(userId));
                 var nomUtilisateur = user?.Nom ?? "Système";
 

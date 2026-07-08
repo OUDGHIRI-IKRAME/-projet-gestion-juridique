@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Claims;
@@ -10,6 +11,7 @@ namespace WebApplication1.Controllers
 {
     [ApiController]
     [Route("api/juridique/{dossierId}/[controller]")]
+    [Authorize]
     public class TransactionJuridiqueController : ControllerBase
     {
         private readonly AppDbContext _context;
@@ -24,6 +26,7 @@ namespace WebApplication1.Controllers
         {
             // 1. Récupérer l'utilisateur connecté (via JWT)
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (userId == null) return Unauthorized();
             var user = await _context.Utilisateurs.FindAsync(int.Parse(userId));
             var role = user?.Role ?? "";
             var isAdminLike = role == "Admin" || role == "admin" || role == "Greffier" || role == "Directeur" || role == "Consultant";

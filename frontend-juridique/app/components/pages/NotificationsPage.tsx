@@ -31,6 +31,7 @@ export function NotificationsPage({ langue, cur, token, BASE_URL, onExport }: Pr
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
   const [commentaires, setCommentaires] = useState<Record<number, string>>({});
+  const [retours, setRetours] = useState<Record<number, boolean>>({});
 
   const fetchNotifications = async () => {
     if (!token) return;
@@ -83,7 +84,7 @@ export function NotificationsPage({ langue, cur, token, BASE_URL, onExport }: Pr
       await fetch(`${BASE_URL}/api/Transactions/${id}/refuser`, {
         method: "PUT",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ commentaire: motif }),
+        body: JSON.stringify({ commentaire: motif, doitRevenir: !!retours[id] }),
       });
       fetchNotifications();
     } catch (err) { console.error(err); }
@@ -219,7 +220,13 @@ export function NotificationsPage({ langue, cur, token, BASE_URL, onExport }: Pr
                         onChange={(e) => setCommentaires(prev => ({ ...prev, [n.id]: e.target.value }))}
                         placeholder={langue === "fr" ? "Votre réponse..." : "ردك..."}
                         className="w-full p-2 border border-slate-300 rounded-lg text-xs outline-none focus:border-blue-500" />
-                      <div className="flex gap-2">
+                      <div className="flex gap-2 items-center">
+                        <label className="flex items-center gap-1 text-[10px] text-slate-500 cursor-pointer">
+                          <input type="checkbox" checked={!!retours[n.id]}
+                            onChange={(e) => setRetours(prev => ({ ...prev, [n.id]: e.target.checked }))}
+                            className="w-3 h-3" />
+                          {langue === "fr" ? "Doit revenir" : "يجب الرجوع"}
+                        </label>
                         <button type="button" onClick={() => handleAccept(n.id)}
                           className="px-4 py-1.5 rounded bg-emerald-600 text-white text-[11px] font-bold hover:bg-emerald-700 transition">
                           {langue === "fr" ? "Accepter" : "قبول"}

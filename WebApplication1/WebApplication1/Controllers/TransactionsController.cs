@@ -196,6 +196,19 @@ namespace WebApplication1.Controllers
                 transaction.DoitRevenir = true;
                 transaction.Document.ServiceActuel = transaction.ServiceOrigine;
                 transaction.Document.StatutActuel = StatutDossier.EnCours;
+
+                var retourTransaction = new Transaction
+                {
+                    DocumentId = transaction.DocumentId,
+                    ServiceOrigine = transaction.ServiceDestination,
+                    ServiceDestination = transaction.ServiceOrigine,
+                    DateTransaction = DateTime.Now,
+                    Remarques = $"Document retourné après refus (doitRevenir): {dto.Commentaire ?? ""}",
+                    UtilisateurId = userId,
+                    Statut = StatutTransaction.EnAttente,
+                    DoitRevenir = false
+                };
+                _context.Transactions.Add(retourTransaction);
             }
 
             await _context.SaveChangesAsync();
